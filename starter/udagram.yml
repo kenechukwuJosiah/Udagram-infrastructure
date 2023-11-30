@@ -66,7 +66,7 @@ Resources:
             Ebs:
               VolumeSize: "10"
         IamInstanceProfile:
-          Name: !Ref RootInstanceProfile
+          Name: !Ref UdagramInstanceProfile
         ImageId: ami-08662cc7aed840314
         InstanceType: t2.micro
         SecurityGroupIds:
