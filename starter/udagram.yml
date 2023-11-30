@@ -11,17 +11,18 @@ Resources:
     Properties:
       GroupDescription: Server security group. Allows http inbound on port 80 only.
       GroupName: !Sub ${ProjectName}-security-group
-      SecurityGroupEgress:
-        - Description: server inbound rule
+      SecurityGroupIngress:
+        - IpProtocol: tcp
+          Description: server inbound rule
           FromPort: 80
-          IpProtocol: tcp
           ToPort: 80
           SourceSecurityGroupId: !Ref ServerLBSecurityGroup
-      SecurityGroupIngress:
-        - Description: server outbound rule
+      SecurityGroupEgress:
+        - IpProtocol: tcp
+          Description: server outbound rule
           FromPort: 0
-          IpProtocol: tcp
           ToPort: 65535
+          CidrIp: 0.0.0.0/0
       Tags:
         - Key: Name
           Value: !Sub ${ProjectName}-sg
@@ -33,17 +34,18 @@ Resources:
     Properties:
       GroupDescription: Server security group. Allows http inbound on port 80 only.
       GroupName: !Sub ${ProjectName}-load-balancer-sg
-      SecurityGroupEgress:
-        - Description: load balancer inbound rule
+      SecurityGroupIngress:
+        - IpProtocol: tcp
+          Description: load balancer inbound rule
           FromPort: 80
-          IpProtocol: tcp
           ToPort: 80
           CidrIp: 0.0.0.0/0
-      SecurityGroupIngress:
-        - Description: load balancer outbound rule
+      SecurityGroupEgress:
+        - IpProtocol: tcp
+          Description: load balancer outbound rule
           FromPort: 0
-          IpProtocol: tcp
           ToPort: 65535
+          CidrIp: 0.0.0.0/0
       Tags:
         - Key: Name
           Value: !Sub ${ProjectName}-lb-security-group
@@ -61,6 +63,7 @@ Resources:
             apt-get update -y
             sudo apt-get install nginx -y
             service nginx start
+            echo '<html><body><h1>it works! Udagram, Udacity!</h1></body></html>' > /usr/share/nginx/html/index.html
         BlockDeviceMappings:
           - DeviceName: "/dev/sdk"
             Ebs:
@@ -68,7 +71,7 @@ Resources:
         IamInstanceProfile:
           Name: !Ref UdagramInstanceProfile
         ImageId: ami-08662cc7aed840314
-        InstanceType: t2.micro
+        InstanceType: t3.small
         SecurityGroupIds:
           - !Ref ServerSecurityGroup
 
@@ -76,14 +79,14 @@ Resources:
     Type: AWS::AutoScaling::AutoScalingGroup
     Properties:
       AutoScalingGroupName: !Sub ${ProjectName}-auto-scaling-group
-      DesiredCapacity: 2
+      DesiredCapacity: 1
       HealthCheckGracePeriod: 60
       HealthCheckType: ELB
       LaunchTemplate:
         LaunchTemplateId: !Ref WebAppLaunchTemplate
         Version: !GetAtt WebAppLaunchTemplate.LatestVersionNumber
-      MaxSize: 6
-      MinSize: 2
+      MaxSize: 4
+      MinSize: 1
       TargetGroupARNs:
         - !Ref ALBTargetGroup
       VPCZoneIdentifier:
@@ -142,12 +145,6 @@ Resources:
         - TargetGroupArn: !Ref ALBTargetGroup
           Type: forward
       Conditions:
-        - Field: http-header
-          HttpHeaderConfig:
-            HttpHeaderName: User-Agent
-            Values:
-              - Mozilla
-              - Chrome
         - Field: path-pattern
           Values: [/]
       ListenerArn: !Ref LoadBalancerListner
