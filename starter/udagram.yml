@@ -5,6 +5,11 @@ Parameters:
     Type: String
     Description: Infrastructure name
 
+  KeyPairName:
+    Description: key pair name
+    Type: String
+    Default: aws-k
+
 Resources:
   ServerSecurityGroup:
     Type: AWS::EC2::SecurityGroup
@@ -58,20 +63,22 @@ Resources:
       LaunchTemplateName: !Sub ${ProjectName}-server-template
       LaunchTemplateData:
         UserData:
-          Fn::Base64: |
+          Fn::Base64: !Sub |
             #!/bin/bash
-            apt-get update -y
-            sudo apt-get install nginx -y
-            service nginx start
-            echo '<html><body><h1>it works! Udagram, Udacity!</h1></body></html>' > /usr/share/nginx/html/index.html
+            yum update -y
+            yum install -y httpd
+            systemctl start httpd
+            systemctl enable httpd
+            echo "<html> <body> <h1>It works! Udagram, Udacity</h1> </body> </html>" > index.html
+        KeyName: !Ref KeyPairName
         BlockDeviceMappings:
           - DeviceName: "/dev/sdk"
             Ebs:
               VolumeSize: "10"
         IamInstanceProfile:
           Name: !Ref UdagramInstanceProfile
-        ImageId: ami-08662cc7aed840314
-        InstanceType: t3.small
+        ImageId: ami-0557a15b87f6559cf
+        InstanceType: t2.micro
         SecurityGroupIds:
           - !Ref ServerSecurityGroup
 
@@ -81,17 +88,16 @@ Resources:
       AutoScalingGroupName: !Sub ${ProjectName}-auto-scaling-group
       DesiredCapacity: 1
       HealthCheckGracePeriod: 60
-      HealthCheckType: ELB
       LaunchTemplate:
         LaunchTemplateId: !Ref WebAppLaunchTemplate
         Version: !GetAtt WebAppLaunchTemplate.LatestVersionNumber
-      MaxSize: 4
+      MaxSize: 2
       MinSize: 1
       TargetGroupARNs:
         - !Ref ALBTargetGroup
       VPCZoneIdentifier:
-        - Fn::ImportValue: !Sub ${ProjectName}-prt1-sbn
-        - Fn::ImportValue: !Sub ${ProjectName}-prt2-sbn
+        # - Fn::ImportValue: !Sub ${ProjectName}-public-sbn
+        - Fn::ImportValue: !Sub ${ProjectName}-private-sbn
 
   ALBTargetGroup:
     Type: AWS::ElasticLoadBalancingV2::TargetGroup
@@ -118,14 +124,13 @@ Resources:
     Properties:
       Name: !Sub ${ProjectName}-load-balancer
       SecurityGroups:
-        - !Ref ServerLBSecurityGroup
+        - Ref: ServerLBSecurityGroup
       Subnets:
         - Fn::ImportValue: !Sub ${ProjectName}-prt1-sbn
         - Fn::ImportValue: !Sub ${ProjectName}-prt2-sbn
       Tags:
         - Key: Name
           Value: !Sub ${ProjectName}-load-balancer
-      Type: application
 
   LoadBalancerListner:
     Type: AWS::ElasticLoadBalancingV2::Listener
@@ -209,7 +214,6 @@ Resources:
       Path: /
       Roles:
         - !Ref UdagramServerRole
-
 Outputs:
   URL:
     Description: udagram public URL
