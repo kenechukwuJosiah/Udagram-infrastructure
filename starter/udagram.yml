@@ -45,12 +45,6 @@ Resources:
           FromPort: 80
           ToPort: 80
           CidrIp: 0.0.0.0/0
-      SecurityGroupEgress:
-        - IpProtocol: tcp
-          Description: load balancer outbound rule
-          FromPort: 0
-          ToPort: 65535
-          CidrIp: 0.0.0.0/0
       Tags:
         - Key: Name
           Value: !Sub ${ProjectName}-lb-security-group
@@ -65,12 +59,11 @@ Resources:
         UserData:
           Fn::Base64: !Sub |
             #!/bin/bash
-            yum update -y
-            yum install -y httpd
-            systemctl start httpd
-            systemctl enable httpd
-            echo "<html> <body> <h1>It works! Udagram, Udacity</h1> </body> </html>" > index.html
-        KeyName: !Ref KeyPairName
+            apt-get update -y
+            apt-get install apache2 -y
+            systemctl start apache2
+            cd /var/www/html
+            echo "<html> <body> <h1>It works! Udagram, Udacity!!</h1> </body> </html>" > index.html
         BlockDeviceMappings:
           - DeviceName: "/dev/sdk"
             Ebs:
@@ -96,26 +89,23 @@ Resources:
       TargetGroupARNs:
         - !Ref ALBTargetGroup
       VPCZoneIdentifier:
-        # - Fn::ImportValue: !Sub ${ProjectName}-public-sbn
         - Fn::ImportValue: !Sub ${ProjectName}-private-sbn
 
   ALBTargetGroup:
     Type: AWS::ElasticLoadBalancingV2::TargetGroup
     Properties:
-      HealthCheckEnabled: true
-      HealthCheckIntervalSeconds: 60
+      HealthCheckIntervalSeconds: 10
       HealthCheckPath: /
-      HealthCheckPort: 80
       HealthCheckProtocol: HTTP
-      HealthCheckTimeoutSeconds: 15
-      HealthyThresholdCount: 4
-      Name: !Sub ${ProjectName}-target-group
+      HealthCheckTimeoutSeconds: 8
+      HealthyThresholdCount: 2
       Port: 80
       Protocol: HTTP
+      UnhealthyThresholdCount: 5
+      Name: !Sub ${ProjectName}-target-group
       Tags:
         - Key: Name
           Value: !Sub ${ProjectName}-target-group
-      UnhealthyThresholdCount: 5
       VpcId:
         Fn::ImportValue: !Sub ${ProjectName}-vpcid
 
@@ -136,8 +126,7 @@ Resources:
     Type: AWS::ElasticLoadBalancingV2::Listener
     Properties:
       DefaultActions:
-        - Order: 1
-          TargetGroupArn: !Ref ALBTargetGroup
+        - TargetGroupArn: !Ref ALBTargetGroup
           Type: forward
       LoadBalancerArn: !Ref UdagramLoadBalancer
       Port: 80

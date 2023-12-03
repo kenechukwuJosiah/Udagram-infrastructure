@@ -109,27 +109,26 @@ Resources:
         - Key: Name
           Value: !Sub ${ProjectName}-eip2
 
-  PrivateSubnet1NatGateway:
+  NatGateway1:
     Type: AWS::EC2::NatGateway
     Properties:
       AllocationId: !GetAtt NatGateway1EIP.AllocationId
-      SubnetId: !Ref PrivateSubnet1
+      SubnetId: !Ref PublicSubnet1
       Tags:
         - Key: Name
           Value: !Sub ${ProjectName}-private-subnet1-natgatway
 
-  PrivateSubnet2NatGateway:
+  NatGateway2:
     Type: AWS::EC2::NatGateway
     Properties:
       AllocationId: !GetAtt NatGateway2EIP.AllocationId
-      SubnetId: !Ref PrivateSubnet2
+      SubnetId: !Ref PublicSubnet2
       Tags:
         - Key: Name
           Value: !Sub ${ProjectName}-private-subnet2-natgatway
 
   PublicSubnetRouteTable:
     Type: AWS::EC2::RouteTable
-    DependsOn: VPCInternetGatewayAttachment
     Properties:
       VpcId: !Ref VPC
       Tags:
@@ -138,6 +137,7 @@ Resources:
 
   PublicSubnetRoute:
     Type: AWS::EC2::Route
+    DependsOn: VPCInternetGatewayAttachment
     Properties:
       DestinationCidrBlock: 0.0.0.0/0
       GatewayId: !Ref VPCInternetGateway
@@ -175,14 +175,14 @@ Resources:
     Type: AWS::EC2::Route
     Properties:
       DestinationCidrBlock: 0.0.0.0/0
-      NatGatewayId: !Ref PrivateSubnet1NatGateway
+      NatGatewayId: !Ref NatGateway1
       RouteTableId: !Ref PrivateSubnet1RouteTable
 
   PrivateSubnet2DefaultRoute:
     Type: AWS::EC2::Route
     Properties:
       DestinationCidrBlock: 0.0.0.0/0
-      NatGatewayId: !Ref PrivateSubnet2NatGateway
+      NatGatewayId: !Ref NatGateway2
       RouteTableId: !Ref PrivateSubnet2RouteTable
 
   PrivateSubnet1RouteTableAssociationDefault:
