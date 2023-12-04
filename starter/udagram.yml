@@ -116,8 +116,8 @@ Resources:
       SecurityGroups:
         - Ref: ServerLBSecurityGroup
       Subnets:
-        - Fn::ImportValue: !Sub ${ProjectName}-prt1-sbn
-        - Fn::ImportValue: !Sub ${ProjectName}-prt2-sbn
+        - Fn::ImportValue: !Sub ${ProjectName}-pub1-sbn
+        - Fn::ImportValue: !Sub ${ProjectName}-pub2-sbn
       Tags:
         - Key: Name
           Value: !Sub ${ProjectName}-load-balancer

@@ -28,6 +28,10 @@ To tear down infrastructure for network or for application use the command below
 2. template.yml: cloudformation resource template usually written in yml format
 3. parameter.json: Parameter value are defined here.
 
+### App URL
+
+http://udagram-load-balancer-699719603.us-east-1.elb.amazonaws.com/
+
 ## Other considerations
 
 Please note that each instrastructure has its own template file written in yml format and a parameter file written in json.
